@@ -1,0 +1,7 @@
+../Core/Src/uart.c:13:6:Uart_Init	16	static
+../Core/Src/uart.c:24:6:Uart_Register	16	static
+../Core/Src/uart.c:32:9:Uart_ReadByte	16	static
+../Core/Src/uart.c:41:9:Uart_ReadPacket	24	static
+../Core/Src/uart.c:50:9:Uart_Write	24	static
+../Core/Src/uart.c:60:6:HAL_UART_RxCpltCallback	24	static
+../Core/Src/uart.c:72:6:HAL_UART_TxCpltCallback	24	static
