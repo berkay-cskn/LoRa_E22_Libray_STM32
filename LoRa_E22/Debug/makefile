@@ -60,8 +60,8 @@ all: main-build
 main-build: LoRa_E22.elf secondary-outputs
 
 # Tool invocations
-LoRa_E22.elf LoRa_E22.map: $(OBJS) $(USER_OBJS) C:\Users\Berkay\STM32CubeIDE\workspace_1.16.1\LoRa_E22\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "LoRa_E22.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Berkay\STM32CubeIDE\workspace_1.16.1\LoRa_E22\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="LoRa_E22.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+LoRa_E22.elf LoRa_E22.map: $(OBJS) $(USER_OBJS) C:\Users\Berkay\STM32CubeIDE\workspace_1.16.1\LoRa_E22_Libray_STM32\LoRa_E22\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "LoRa_E22.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Berkay\STM32CubeIDE\workspace_1.16.1\LoRa_E22_Libray_STM32\LoRa_E22\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="LoRa_E22.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -18,8 +18,6 @@
 #define LORA_MAX_BUFFER_SIZE 240  // Max payload size for lora
 #define LORA_COMMAND_TIMEOUT_MS 1000  // Timeout for command responses
 
-#define RSSI_ENABLED 1
-
 /* --- DO NOT MODIFY BELOW THIS --- */
 
 // REGISTERS

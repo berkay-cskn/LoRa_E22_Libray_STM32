@@ -40,6 +40,8 @@ Lora_Status_t Lora_Init(Lora_t *lora, Lora_Init_t *initConfig, UartHandler_t *ua
         loraDevices[loraDeviceCount++] = lora;
     }
 
+    Lora_SetMode(lora, LORA_MODE_CONFIGURATION);
+    Lora_GetConfig(lora);
     Lora_SetMode(lora, LORA_MODE_NORMAL);
 
     return LORA_STATUS_SUCCESS;
@@ -159,14 +161,15 @@ static void Lora_ProcessNormalData(Lora_t *lora, uint8_t byte)
         case LORA_PARSE_STATE_WAITING_SUFFIX:
             if(byte == lora->init->suffix)
             {
-                #if RSSI_ENABLED
-                lora->parseState = LORA_PARSE_STATE_WAITING_RSSI;
-                #else
-                memcpy(lora->rxBuffer, lora->tempBuffer, lora->expectedLength);
-                lora->messageLength = lora->expectedLength;
-                lora->dataReady = 1;
-                lora->parseState = LORA_PARSE_STATE_WAITING_PREFIX;
-                #endif
+                if(lora->config.RSSIEnabled) {
+                    lora->parseState = LORA_PARSE_STATE_WAITING_RSSI;
+                }
+                else {
+                    memcpy(lora->rxBuffer, lora->tempBuffer, lora->expectedLength);
+                    lora->messageLength = lora->expectedLength;
+                    lora->dataReady = 1;
+                    lora->parseState = LORA_PARSE_STATE_WAITING_PREFIX;
+                }
             }
             else
             {
@@ -338,7 +341,6 @@ Lora_Status_t Lora_GetConfig(Lora_t *lora)
     if(status != LORA_STATUS_SUCCESS)
         return status;
 
-    // BUG FIX: eskiden parse edilmiyordu
     lora->config.ADDH    = raw[0];
     lora->config.ADDL    = raw[1];
     lora->config.NETID   = raw[2];

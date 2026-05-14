@@ -185,7 +185,6 @@ int main(void)
 
   Lora_Init(&lora, &loraInit, &uart4);
 
-
   RingBuffer_t rb2;
   uart1.ringBuffer = &rb2;
   uart1.uart = &huart3;
@@ -230,19 +229,6 @@ int main(void)
   loraConfig.WORCycle = 0;
   loraConfig.WORTransceiverControl = 0;
 */
-  Lora_SetMode(&lora, LORA_MODE_CONFIGURATION);
-  HAL_Delay(100);
-  Lora_GetConfig(&lora);
-  HAL_Delay(100);
-  Lora_SetMode(&lora, LORA_MODE_NORMAL);
-
-  HAL_Delay(100);
-
-  Lora_SetMode(&lora2, LORA_MODE_CONFIGURATION);
-  HAL_Delay(100);
-  Lora_GetConfig(&lora2);
-  HAL_Delay(100);
-  Lora_SetMode(&lora2, LORA_MODE_NORMAL);
 
   int startTime = HAL_GetTick();
   int dataReady = 0;
@@ -266,10 +252,10 @@ int main(void)
 		  startTime = HAL_GetTick();
 		  Lora_Write(&lora, 101, 18, data, 10);
 		  dataPack.ukb_rssi = lora2.RSSI;
-		  //if(dataReady) {
+		  if(dataReady) {
 			  Uart_Write(&uart2, (uint8_t *)&dataPack, sizeof(dataPack));
 			  dataReady = 0;
-		  //}
+		  }
 	  }
 
   }

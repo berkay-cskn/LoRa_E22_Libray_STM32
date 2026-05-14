@@ -11,7 +11,7 @@ void RingBuffer_Init(RingBuffer_t *ringBuffer, uint16_t size) {
 	uint8_t* buffer = (uint8_t*)malloc(size);
 
 	if (buffer == NULL) {
-	        return ;  // Memory allocation failed
+	    return ;  // Memory allocation failed
 	}
 
 	*(uint8_t **)&ringBuffer->buffer = buffer; // not sure how it works
