@@ -1,7 +1,9 @@
 # LoRa E22 STM32 Library
 
-A lightweight, interrupt-driven LoRa E22 driver for STM32 microcontrollers, built on top of a ring-buffer UART abstraction layer. Supports multiple simultaneous modules, fixed-point transmission, RSSI reporting, and a clean state-machine packet parser.
+An interrupt-driven LoRa E22 driver for STM32 microcontrollers, built on top of a ring-buffer UART abstraction layer. Supports multiple simultaneous modules, fixed-point transmission, RSSI reporting, and a clean state-machine packet parser.
 
+> [!WARNING]
+> This library is currently under active development.
 ---
 
 ## Table of Contents
