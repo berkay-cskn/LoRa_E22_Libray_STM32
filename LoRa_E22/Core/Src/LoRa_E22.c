@@ -41,7 +41,9 @@ Lora_Status_t Lora_Init(Lora_t *lora, Lora_Init_t *initConfig, UartHandler_t *ua
     }
 
     Lora_SetMode(lora, LORA_MODE_CONFIGURATION);
+    HAL_Delay(100);
     Lora_GetConfig(lora);
+    HAL_Delay(100);
     Lora_SetMode(lora, LORA_MODE_NORMAL);
 
     return LORA_STATUS_SUCCESS;

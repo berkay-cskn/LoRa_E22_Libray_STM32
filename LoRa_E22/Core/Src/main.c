@@ -244,7 +244,7 @@ int main(void)
 
 	  Lora_Process(&lora2);
 	  if(Lora_IsDataReady(&lora2)) {
-		  Lora_Read(&lora2, response, 10);
+		  Lora_Read(&lora2, (uint8_t *)&dataPack.rocketData, sizeof(dataPack.rocketData));
 		  dataReady = 1;
 	  }
 
@@ -253,6 +253,7 @@ int main(void)
 		  Lora_Write(&lora, 101, 18, data, 10);
 		  dataPack.ukb_rssi = lora2.RSSI;
 		  if(dataReady) {
+			  dataPack.ukb_rssi = lora2.RSSI;
 			  Uart_Write(&uart2, (uint8_t *)&dataPack, sizeof(dataPack));
 			  dataReady = 0;
 		  }
