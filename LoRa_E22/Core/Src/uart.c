@@ -57,7 +57,7 @@ uint8_t Uart_Write(UartHandler_t* uartHandler, uint8_t* data, uint16_t size)
     return 1;
 }
 
-__weak void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+void LoRa_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	for(uint8_t i = 0; i < uartCount; i++) {
 		if(huart == uartHandlers[i]->uart) {
@@ -69,7 +69,7 @@ __weak void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
-__weak void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+void LoRa_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     for(uint8_t i = 0; i < uartCount; i++) {
         if(huart->Instance == uartHandlers[i]->uart->Instance) {

@@ -3,5 +3,5 @@
 ../Core/Src/uart.c:32:9:Uart_ReadByte	16	static
 ../Core/Src/uart.c:41:9:Uart_ReadPacket	24	static
 ../Core/Src/uart.c:50:9:Uart_Write	24	static
-../Core/Src/uart.c:60:13:HAL_UART_RxCpltCallback	24	static
-../Core/Src/uart.c:72:13:HAL_UART_TxCpltCallback	24	static
+../Core/Src/uart.c:60:6:LoRa_UART_RxCpltCallback	24	static
+../Core/Src/uart.c:72:6:LoRa_UART_TxCpltCallback	24	static

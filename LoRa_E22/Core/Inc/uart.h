@@ -29,4 +29,7 @@ uint8_t Uart_ReadByte(UartHandler_t* uartHandler, uint8_t* data);
 uint8_t Uart_ReadPacket(UartHandler_t* uartHandler, uint8_t* buffer, uint16_t length);
 uint8_t Uart_Write(UartHandler_t* uartHandler, uint8_t* data, uint16_t size);
 
+void LoRa_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+void LoRa_UART_TxCpltCallback(UART_HandleTypeDef *huart);
+
 #endif /* INC_UART_H_ */

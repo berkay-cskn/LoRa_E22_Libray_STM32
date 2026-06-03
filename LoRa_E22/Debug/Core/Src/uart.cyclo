@@ -3,5 +3,5 @@
 ../Core/Src/uart.c:32:9:Uart_ReadByte	2
 ../Core/Src/uart.c:41:9:Uart_ReadPacket	2
 ../Core/Src/uart.c:50:9:Uart_Write	2
-../Core/Src/uart.c:60:13:HAL_UART_RxCpltCallback	3
-../Core/Src/uart.c:72:13:HAL_UART_TxCpltCallback	3
+../Core/Src/uart.c:60:6:LoRa_UART_RxCpltCallback	3
+../Core/Src/uart.c:72:6:LoRa_UART_TxCpltCallback	3
