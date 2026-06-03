@@ -27,9 +27,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000030  00000000  00000000  0000505c  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000b2c7  00000000  00000000  0000508c  2**0
+ 12 .debug_info   0000b2c9  00000000  00000000  0000508c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 00001f5c  00000000  00000000  00010353  2**0
+ 13 .debug_abbrev 00001f5b  00000000  00000000  00010355  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  14 .debug_aranges 000008b0  00000000  00000000  000122b0  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -3326,17 +3326,29 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  80017c8:	e000ed00 	.word	0xe000ed00
 
 080017cc <Uart_Init>:
+#include "Uart.h"
+
+UartHandler_t* uartHandlers[MAX_UART_COUNT];
+uint8_t uartCount = 0;
+
+void Uart_Init(UartHandler_t* uartHandler) {
  80017cc:	b580      	push	{r7, lr}
  80017ce:	b082      	sub	sp, #8
  80017d0:	af00      	add	r7, sp, #0
  80017d2:	6078      	str	r0, [r7, #4]
+
+	RingBuffer_Init(uartHandler->ringBuffer, RING_BUFFER_SIZE);
  80017d4:	687b      	ldr	r3, [r7, #4]
  80017d6:	685b      	ldr	r3, [r3, #4]
  80017d8:	f44f 7180 	mov.w	r1, #256	@ 0x100
  80017dc:	4618      	mov	r0, r3
  80017de:	f7ff fb69 	bl	8000eb4 <RingBuffer_Init>
+
+	Uart_Register(uartHandler);
  80017e2:	6878      	ldr	r0, [r7, #4]
  80017e4:	f000 f810 	bl	8001808 <Uart_Register>
+
+	HAL_UART_Receive_IT(uartHandler->uart, &uartHandler->rxByte, 1);
  80017e8:	687b      	ldr	r3, [r7, #4]
  80017ea:	6818      	ldr	r0, [r3, #0]
  80017ec:	687b      	ldr	r3, [r7, #4]
@@ -3344,9 +3356,12 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  80017f0:	2201      	movs	r2, #1
  80017f2:	4619      	mov	r1, r3
  80017f4:	f001 fad0 	bl	8002d98 <HAL_UART_Receive_IT>
+
+	uartHandler->txCplt = 1;
  80017f8:	687b      	ldr	r3, [r7, #4]
  80017fa:	2201      	movs	r2, #1
  80017fc:	725a      	strb	r2, [r3, #9]
+}
  80017fe:	bf00      	nop
  8001800:	3708      	adds	r7, #8
  8001802:	46bd      	mov	sp, r7
@@ -3354,20 +3369,27 @@ __STATIC_FORCEINLINE void __disable_irq(void)
 	...
 
 08001808 <Uart_Register>:
+
+void Uart_Register(UartHandler_t* uartHandler) {
  8001808:	b480      	push	{r7}
  800180a:	b083      	sub	sp, #12
  800180c:	af00      	add	r7, sp, #0
  800180e:	6078      	str	r0, [r7, #4]
+	if(uartCount >= MAX_UART_COUNT)
  8001810:	4b0b      	ldr	r3, [pc, #44]	@ (8001840 <Uart_Register+0x38>)
  8001812:	781b      	ldrb	r3, [r3, #0]
  8001814:	2b02      	cmp	r3, #2
  8001816:	d80d      	bhi.n	8001834 <Uart_Register+0x2c>
+		return;
+
+	uartHandlers[uartCount] = uartHandler;
  8001818:	4b09      	ldr	r3, [pc, #36]	@ (8001840 <Uart_Register+0x38>)
  800181a:	781b      	ldrb	r3, [r3, #0]
  800181c:	4619      	mov	r1, r3
  800181e:	4a09      	ldr	r2, [pc, #36]	@ (8001844 <Uart_Register+0x3c>)
  8001820:	687b      	ldr	r3, [r7, #4]
  8001822:	f842 3021 	str.w	r3, [r2, r1, lsl #2]
+	uartCount++;
  8001826:	4b06      	ldr	r3, [pc, #24]	@ (8001840 <Uart_Register+0x38>)
  8001828:	781b      	ldrb	r3, [r3, #0]
  800182a:	3301      	adds	r3, #1
@@ -3375,7 +3397,9 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  800182e:	4b04      	ldr	r3, [pc, #16]	@ (8001840 <Uart_Register+0x38>)
  8001830:	701a      	strb	r2, [r3, #0]
  8001832:	e000      	b.n	8001836 <Uart_Register+0x2e>
+		return;
  8001834:	bf00      	nop
+}
  8001836:	370c      	adds	r7, #12
  8001838:	46bd      	mov	sp, r7
  800183a:	f85d 7b04 	ldr.w	r7, [sp], #4
@@ -3384,31 +3408,46 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  8001844:	200009c4 	.word	0x200009c4
 
 08001848 <Uart_ReadByte>:
+
+uint8_t Uart_ReadByte(UartHandler_t* uartHandler, uint8_t* data)
+{
  8001848:	b580      	push	{r7, lr}
  800184a:	b082      	sub	sp, #8
  800184c:	af00      	add	r7, sp, #0
  800184e:	6078      	str	r0, [r7, #4]
  8001850:	6039      	str	r1, [r7, #0]
+    if(uartHandler->ringBuffer->bytesToRead == 0)
  8001852:	687b      	ldr	r3, [r7, #4]
  8001854:	685b      	ldr	r3, [r3, #4]
  8001856:	895b      	ldrh	r3, [r3, #10]
  8001858:	2b00      	cmp	r3, #0
  800185a:	d101      	bne.n	8001860 <Uart_ReadByte+0x18>
+        return 0;
  800185c:	2300      	movs	r3, #0
  800185e:	e007      	b.n	8001870 <Uart_ReadByte+0x28>
+
+    RingBuffer_Dequeue(uartHandler->ringBuffer, data, 1);
  8001860:	687b      	ldr	r3, [r7, #4]
  8001862:	685b      	ldr	r3, [r3, #4]
  8001864:	2201      	movs	r2, #1
  8001866:	6839      	ldr	r1, [r7, #0]
  8001868:	4618      	mov	r0, r3
  800186a:	f7ff fb84 	bl	8000f76 <RingBuffer_Dequeue>
+    return 1;
  800186e:	2301      	movs	r3, #1
+}
  8001870:	4618      	mov	r0, r3
  8001872:	3708      	adds	r7, #8
  8001874:	46bd      	mov	sp, r7
  8001876:	bd80      	pop	{r7, pc}
 
 08001878 <Uart_Write>:
+    RingBuffer_Dequeue(uartHandler->ringBuffer, buffer, length);
+    return 1;
+}
+
+uint8_t Uart_Write(UartHandler_t* uartHandler, uint8_t* data, uint16_t size)
+{
  8001878:	b580      	push	{r7, lr}
  800187a:	b084      	sub	sp, #16
  800187c:	af00      	add	r7, sp, #0
@@ -3416,35 +3455,47 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  8001880:	60b9      	str	r1, [r7, #8]
  8001882:	4613      	mov	r3, r2
  8001884:	80fb      	strh	r3, [r7, #6]
+    if(uartHandler->txCplt == 0)
  8001886:	68fb      	ldr	r3, [r7, #12]
  8001888:	7a5b      	ldrb	r3, [r3, #9]
  800188a:	2b00      	cmp	r3, #0
  800188c:	d101      	bne.n	8001892 <Uart_Write+0x1a>
+        return 0; // Önceki transmit tamamlanmamış
  800188e:	2300      	movs	r3, #0
  8001890:	e00a      	b.n	80018a8 <Uart_Write+0x30>
+
+    uartHandler->txCplt = 0; // flag sıfırla
  8001892:	68fb      	ldr	r3, [r7, #12]
  8001894:	2200      	movs	r2, #0
  8001896:	725a      	strb	r2, [r3, #9]
+    HAL_UART_Transmit_IT(uartHandler->uart, data, size);
  8001898:	68fb      	ldr	r3, [r7, #12]
  800189a:	681b      	ldr	r3, [r3, #0]
  800189c:	88fa      	ldrh	r2, [r7, #6]
  800189e:	68b9      	ldr	r1, [r7, #8]
  80018a0:	4618      	mov	r0, r3
  80018a2:	f001 fa43 	bl	8002d2c <HAL_UART_Transmit_IT>
+    return 1;
  80018a6:	2301      	movs	r3, #1
+}
  80018a8:	4618      	mov	r0, r3
  80018aa:	3710      	adds	r7, #16
  80018ac:	46bd      	mov	sp, r7
  80018ae:	bd80      	pop	{r7, pc}
 
 080018b0 <HAL_UART_RxCpltCallback>:
+
+__weak void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
  80018b0:	b580      	push	{r7, lr}
  80018b2:	b084      	sub	sp, #16
  80018b4:	af00      	add	r7, sp, #0
  80018b6:	6078      	str	r0, [r7, #4]
+	for(uint8_t i = 0; i < uartCount; i++) {
  80018b8:	2300      	movs	r3, #0
  80018ba:	73fb      	strb	r3, [r7, #15]
  80018bc:	e020      	b.n	8001900 <HAL_UART_RxCpltCallback+0x50>
+		if(huart == uartHandlers[i]->uart) {
  80018be:	7bfb      	ldrb	r3, [r7, #15]
  80018c0:	4a14      	ldr	r2, [pc, #80]	@ (8001914 <HAL_UART_RxCpltCallback+0x64>)
  80018c2:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
@@ -3452,10 +3503,12 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  80018c8:	687a      	ldr	r2, [r7, #4]
  80018ca:	429a      	cmp	r2, r3
  80018cc:	d115      	bne.n	80018fa <HAL_UART_RxCpltCallback+0x4a>
+			UartHandler_t* uartHandler = uartHandlers[i];
  80018ce:	7bfb      	ldrb	r3, [r7, #15]
  80018d0:	4a10      	ldr	r2, [pc, #64]	@ (8001914 <HAL_UART_RxCpltCallback+0x64>)
  80018d2:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
  80018d6:	60bb      	str	r3, [r7, #8]
+			RingBuffer_Enqueue(uartHandler->ringBuffer, &uartHandler->rxByte, 1);
  80018d8:	68bb      	ldr	r3, [r7, #8]
  80018da:	6858      	ldr	r0, [r3, #4]
  80018dc:	68bb      	ldr	r3, [r7, #8]
@@ -3463,6 +3516,7 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  80018e0:	2201      	movs	r2, #1
  80018e2:	4619      	mov	r1, r3
  80018e4:	f7ff fb09 	bl	8000efa <RingBuffer_Enqueue>
+			HAL_UART_Receive_IT(uartHandler->uart, &uartHandler->rxByte, 1);
  80018e8:	68bb      	ldr	r3, [r7, #8]
  80018ea:	6818      	ldr	r0, [r3, #0]
  80018ec:	68bb      	ldr	r3, [r7, #8]
@@ -3470,7 +3524,9 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  80018f0:	2201      	movs	r2, #1
  80018f2:	4619      	mov	r1, r3
  80018f4:	f001 fa50 	bl	8002d98 <HAL_UART_Receive_IT>
+			break;
  80018f8:	e008      	b.n	800190c <HAL_UART_RxCpltCallback+0x5c>
+	for(uint8_t i = 0; i < uartCount; i++) {
  80018fa:	7bfb      	ldrb	r3, [r7, #15]
  80018fc:	3301      	adds	r3, #1
  80018fe:	73fb      	strb	r3, [r7, #15]
@@ -3479,6 +3535,9 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  8001904:	7bfa      	ldrb	r2, [r7, #15]
  8001906:	429a      	cmp	r2, r3
  8001908:	d3d9      	bcc.n	80018be <HAL_UART_RxCpltCallback+0xe>
+		}
+	}
+}
  800190a:	bf00      	nop
  800190c:	bf00      	nop
  800190e:	3710      	adds	r7, #16
@@ -3488,13 +3547,18 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  8001918:	200009d0 	.word	0x200009d0
 
 0800191c <HAL_UART_TxCpltCallback>:
+
+__weak void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
  800191c:	b480      	push	{r7}
  800191e:	b085      	sub	sp, #20
  8001920:	af00      	add	r7, sp, #0
  8001922:	6078      	str	r0, [r7, #4]
+    for(uint8_t i = 0; i < uartCount; i++) {
  8001924:	2300      	movs	r3, #0
  8001926:	73fb      	strb	r3, [r7, #15]
  8001928:	e013      	b.n	8001952 <HAL_UART_TxCpltCallback+0x36>
+        if(huart->Instance == uartHandlers[i]->uart->Instance) {
  800192a:	687b      	ldr	r3, [r7, #4]
  800192c:	681a      	ldr	r2, [r3, #0]
  800192e:	7bfb      	ldrb	r3, [r7, #15]
@@ -3504,12 +3568,15 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  8001938:	681b      	ldr	r3, [r3, #0]
  800193a:	429a      	cmp	r2, r3
  800193c:	d106      	bne.n	800194c <HAL_UART_TxCpltCallback+0x30>
+            uartHandlers[i]->txCplt = 1;
  800193e:	7bfb      	ldrb	r3, [r7, #15]
  8001940:	4a0a      	ldr	r2, [pc, #40]	@ (800196c <HAL_UART_TxCpltCallback+0x50>)
  8001942:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
  8001946:	2201      	movs	r2, #1
  8001948:	725a      	strb	r2, [r3, #9]
+            break;
  800194a:	e008      	b.n	800195e <HAL_UART_TxCpltCallback+0x42>
+    for(uint8_t i = 0; i < uartCount; i++) {
  800194c:	7bfb      	ldrb	r3, [r7, #15]
  800194e:	3301      	adds	r3, #1
  8001950:	73fb      	strb	r3, [r7, #15]
@@ -3518,6 +3585,9 @@ __STATIC_FORCEINLINE void __disable_irq(void)
  8001956:	7bfa      	ldrb	r2, [r7, #15]
  8001958:	429a      	cmp	r2, r3
  800195a:	d3e6      	bcc.n	800192a <HAL_UART_TxCpltCallback+0xe>
+        }
+    }
+}
  800195c:	bf00      	nop
  800195e:	bf00      	nop
  8001960:	3714      	adds	r7, #20
