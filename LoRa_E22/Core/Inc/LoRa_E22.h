@@ -99,7 +99,8 @@ typedef enum {
     LORA_STATUS_TIMEOUT,
     LORA_STATUS_WRONG_FORMAT,
     LORA_STATUS_INVALID_MODE,
-    LORA_STATUS_INVALID_CONFIG
+    LORA_STATUS_INVALID_CONFIG,
+	LORA_STATUS_MODULE_ISNT_READY
 } Lora_Status_t;
 
 typedef enum {
@@ -207,7 +208,7 @@ uint8_t Lora_ReadCommandResponse(Lora_t *lora, uint8_t *response, uint8_t maxLen
 Lora_Status_t Lora_WriteRegister(Lora_t *lora, uint8_t registerAddress, uint8_t length, uint8_t *parameter);
 Lora_Status_t Lora_ReadRegister(Lora_t *lora, uint8_t registerAddress, uint8_t length, uint8_t *outBuffer, uint8_t outLen);
 
-Lora_Status_t Lora_UpdateModuleStatus(Lora_t *lora);
+void Lora_UpdateModuleReadiness(Lora_t *lora);
 uint8_t Lora_IsModuleReady(Lora_t *lora);
 uint8_t Lora_IsDataReady(Lora_t *lora);
 uint8_t Lora_IsCommandResponseReady(Lora_t *lora);

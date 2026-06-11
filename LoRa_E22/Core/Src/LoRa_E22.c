@@ -40,6 +40,8 @@ Lora_Status_t Lora_Init(Lora_t *lora, Lora_Init_t *initConfig, UartHandler_t *ua
         loraDevices[loraDeviceCount++] = lora;
     }
 
+    Lora_UpdateModuleReadiness(lora);
+
     Lora_SetMode(lora, LORA_MODE_CONFIGURATION);
     HAL_Delay(100);
     Lora_GetConfig(lora);
@@ -53,6 +55,9 @@ Lora_Status_t Lora_SetMode(Lora_t *lora, Lora_Mode_t newMode)
 {
     if(lora == NULL)
         return LORA_STATUS_FAIL;
+
+    if(!lora->moduleReady)
+    	return LORA_STATUS_MODULE_ISNT_READY;
 
     // M0 ve M1 pinlerini ayarla
     switch(newMode)
@@ -213,6 +218,9 @@ Lora_Status_t Lora_Write(Lora_t *lora, uint16_t targetAddress, uint8_t targetCha
     if(lora == NULL || data == NULL)
         return LORA_STATUS_FAIL;
 
+    if(!lora->moduleReady)
+    	return LORA_STATUS_MODULE_ISNT_READY;
+
     if(lora->mode != LORA_MODE_NORMAL && lora->mode != LORA_MODE_WOR)
         return LORA_STATUS_INVALID_MODE;
 
@@ -305,32 +313,10 @@ Lora_Status_t Lora_SetConfig(Lora_t *lora, Lora_Config_t *config)
     if(lora == NULL || config == NULL)
         return LORA_STATUS_FAIL;
 
-    // Config'i byte array'e dönüştür
-    uint8_t configBytes[7];
-    configBytes[0] = config->ADDH;
-    configBytes[1] = config->ADDL;
-    configBytes[2] = config->NETID;
+    if(!lora->moduleReady)
+    	return LORA_STATUS_MODULE_ISNT_READY;
 
-    configBytes[3] = (config->BaudRate & 0x07) |
-                     ((config->ParityBit & 0x03) << 3) |
-                     ((config->AirDataRate & 0x07) << 5);
-
-    configBytes[4] = (config->SubPacketSize & 0x03) |
-                     ((config->AmbientRSSI & 0x01) << 2) |
-                     ((config->Reserved & 0x07) << 3) |
-                     ((config->TransmittingPower & 0x03) << 6);
-
-    configBytes[5] = config->Channel;
-
-    configBytes[6] = (config->RSSIEnabled & 0x01) |
-                     ((config->FixedPointTransmission & 0x01) << 1) |
-                     ((config->RepeaterEnabled & 0x01) << 2) |
-                     ((config->LBTEnabled & 0x01) << 3) |
-                     ((config->WORTransceiverControl & 0x01) << 4) |
-                     ((config->WORCycle & 0x07) << 5);
-
-
-    return Lora_WriteRegister(lora, LORA_REG_ADDH, 7, configBytes);
+    return Lora_WriteRegister(lora, LORA_REG_ADDH, 7, (uint8_t *)config);
 }
 
 Lora_Status_t Lora_GetConfig(Lora_t *lora)
@@ -338,32 +324,15 @@ Lora_Status_t Lora_GetConfig(Lora_t *lora)
     if(lora == NULL)
         return LORA_STATUS_FAIL;
 
+    if(!lora->moduleReady)
+    	return LORA_STATUS_MODULE_ISNT_READY;
+
     uint8_t raw[7];
     Lora_Status_t status = Lora_ReadRegister(lora, LORA_REG_ADDH, 7, raw, sizeof(raw));
     if(status != LORA_STATUS_SUCCESS)
         return status;
 
-    lora->config.ADDH    = raw[0];
-    lora->config.ADDL    = raw[1];
-    lora->config.NETID   = raw[2];
-
-    lora->config.BaudRate    = (raw[3] >> 0) & 0x07;
-    lora->config.ParityBit   = (raw[3] >> 3) & 0x03;
-    lora->config.AirDataRate = (raw[3] >> 5) & 0x07;
-
-    lora->config.SubPacketSize    = (raw[4] >> 0) & 0x03;
-    lora->config.AmbientRSSI      = (raw[4] >> 2) & 0x01;
-    lora->config.Reserved         = (raw[4] >> 3) & 0x07;
-    lora->config.TransmittingPower = (raw[4] >> 6) & 0x03;
-
-    lora->config.Channel = raw[5];
-
-    lora->config.RSSIEnabled            = (raw[6] >> 0) & 0x01;
-    lora->config.FixedPointTransmission = (raw[6] >> 1) & 0x01;
-    lora->config.RepeaterEnabled        = (raw[6] >> 2) & 0x01;
-    lora->config.LBTEnabled             = (raw[6] >> 3) & 0x01;
-    lora->config.WORTransceiverControl  = (raw[6] >> 4) & 0x01;
-    lora->config.WORCycle               = (raw[6] >> 5) & 0x07;
+    memcpy(&lora->config, raw, sizeof(raw));
 
     return LORA_STATUS_SUCCESS;
 }
@@ -397,6 +366,9 @@ static Lora_Status_t Lora_RegisterIO(Lora_t *lora, Lora_Command_t command, uint8
 {
     if(lora == NULL)
         return LORA_STATUS_FAIL;
+
+    if(!lora->moduleReady)
+    	return LORA_STATUS_MODULE_ISNT_READY;
 
     // Zaten bir command bekleniyorsa hata ver
     if(lora->parseMode == LORA_PARSE_MODE_COMMAND_RESPONSE)
@@ -454,11 +426,13 @@ static Lora_Status_t Lora_RegisterIO(Lora_t *lora, Lora_Command_t command, uint8
     return Lora_WaitCommandResponse(lora);
 }
 
-Lora_Status_t Lora_WriteRegister(Lora_t *lora, uint8_t registerAddress,
-                                  uint8_t length, uint8_t *parameter)
+Lora_Status_t Lora_WriteRegister(Lora_t *lora, uint8_t registerAddress, uint8_t length, uint8_t *parameter)
 {
     if(parameter == NULL)
         return LORA_STATUS_FAIL;
+
+    if(!lora->moduleReady)
+    	return LORA_STATUS_MODULE_ISNT_READY;
 
     return Lora_RegisterIO(lora, LORA_COMMAND_SET_REG, registerAddress, length, parameter);
 }
@@ -467,6 +441,9 @@ Lora_Status_t Lora_ReadRegister(Lora_t *lora, uint8_t registerAddress, uint8_t l
 {
     if(outBuffer == NULL)
         return LORA_STATUS_FAIL;
+
+    if(!lora->moduleReady)
+    	return LORA_STATUS_MODULE_ISNT_READY;
 
     Lora_Status_t status = Lora_RegisterIO(lora, LORA_COMMAND_READ_REG,
                                            registerAddress, length, NULL);
@@ -510,6 +487,10 @@ static Lora_Status_t Lora_WaitCommandResponse(Lora_t *lora)
     return LORA_STATUS_SUCCESS;
 }
 
+void Lora_UpdateModuleReadiness(Lora_t *lora) {
+	lora->moduleReady = Lora_IsModuleReady(lora);
+}
+
 void Lora_AUX_IRQHandler(uint16_t GPIO_Pin)
 {
     // Hangi LoRa modülüne ait olduğunu bul ve update et
@@ -517,7 +498,7 @@ void Lora_AUX_IRQHandler(uint16_t GPIO_Pin)
     {
         if(loraDevices[i]->init->auxPin == GPIO_Pin)
         {
-            Lora_UpdateModuleStatus(loraDevices[i]);
+        	Lora_UpdateModuleReadiness(loraDevices[i]);
             break;
         }
     }

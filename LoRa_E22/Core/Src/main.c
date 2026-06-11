@@ -204,10 +204,31 @@ int main(void)
 
   Lora_Init(&lora2, &loraInit2, &uart1);
 
-  RingBuffer_t rb3;
-  uart2.ringBuffer = &rb3;
-  uart2.uart = &huart2;
-  Uart_Init(&uart2);
+  Lora_SetMode(&lora2, LORA_MODE_CONFIGURATION);
+  HAL_Delay(100);
+  //memcpy(&loraConfig, &lora2.config, 7);
+  loraConfig = lora2.config;
+  loraConfig.ADDH = 0;
+  loraConfig.ADDL = 100;
+  loraConfig.AirDataRate = LORA_AIR_DATA_RATE_4_8;
+  loraConfig.AmbientRSSI = 0;
+  loraConfig.BaudRate = LORA_UART_BAUD_RATE_9600;
+  loraConfig.Channel = 18;
+  loraConfig.FixedPointTransmission = 1;
+  loraConfig.LBTEnabled = 0;
+  loraConfig.ParityBit = 0;
+  loraConfig.NETID = 0;
+  loraConfig.RSSIEnabled = 1;
+  loraConfig.RepeaterEnabled = 0;
+  loraConfig.SubPacketSize = LORA_SUB_PACKET_SIZE_64;
+  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_30;
+  loraConfig.WORCycle = 0;
+  loraConfig.WORTransceiverControl = 0;
+  Lora_SetConfig(&lora2, &loraConfig);
+  HAL_Delay(100);
+  Lora_GetConfig(&lora2);
+  HAL_Delay(100);
+  Lora_SetMode(&lora2, LORA_MODE_NORMAL);
 
 /*
   Lora_SetMode(&lora, LORA_MODE_CONFIGURATION);
@@ -230,8 +251,14 @@ int main(void)
   loraConfig.WORTransceiverControl = 0;
 */
 
+  RingBuffer_t rb3;
+  uart2.ringBuffer = &rb3;
+  uart2.uart = &huart2;
+  Uart_Init(&uart2);
+
   int startTime = HAL_GetTick();
   int dataReady = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -441,7 +468,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : E22_AUX_Pin */
   GPIO_InitStruct.Pin = E22_AUX_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(E22_AUX_GPIO_Port, &GPIO_InitStruct);
 
@@ -454,7 +481,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : E22_2_AUX_Pin */
   GPIO_InitStruct.Pin = E22_2_AUX_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(E22_2_AUX_GPIO_Port, &GPIO_InitStruct);
 
@@ -473,6 +500,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
 	LoRa_UART_TxCpltCallback(huart);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	Lora_AUX_IRQHandler(GPIO_Pin);
 }
 
 /* USER CODE END 4 */
