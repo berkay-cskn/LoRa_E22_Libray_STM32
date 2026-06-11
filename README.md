@@ -1,9 +1,7 @@
 # LoRa E22 STM32 Library
 
-An interrupt-driven LoRa E22 driver for STM32 microcontrollers, built on top of a ring-buffer UART abstraction layer. Supports multiple simultaneous modules, fixed-point transmission, RSSI reporting, and a clean state-machine packet parser.
+A lightweight, interrupt-driven LoRa E22 driver for STM32 microcontrollers, built on top of a ring-buffer UART abstraction layer. Supports multiple simultaneous modules, fixed-point transmission, RSSI reporting, and a clean state-machine packet parser.
 
-> [!WARNING]
-> This library is currently under active development.
 ---
 
 ## Table of Contents
@@ -56,7 +54,10 @@ Each layer can be used independently if needed.
 [E22 Module]
      │  UART RX interrupt fires per byte
      ▼
-HAL_UART_RxCpltCallback()
+HAL_UART_RxCpltCallback()       ← defined by the user in their project
+     │  forwards to
+     ▼
+LoRa_UART_RxCpltCallback()      ← defined in uart.c
      │  enqueues byte
      ▼
 RingBuffer_Enqueue()
@@ -82,7 +83,10 @@ Application calls Lora_Write()
 Uart_Write()
      │  HAL_UART_Transmit_IT()
      ▼
-HAL_UART_TxCpltCallback()  → txCplt = 1
+HAL_UART_TxCpltCallback()       ← defined by the user in their project
+     │  forwards to
+     ▼
+LoRa_UART_TxCpltCallback()      ← defined in uart.c, sets txCplt = 1
 ```
 
 ---
@@ -205,8 +209,10 @@ typedef struct {
 | `Uart_ReadByte(handler, data)` | Pops one byte from the ring buffer; returns `1` on success |
 | `Uart_ReadPacket(handler, buf, len)` | Pops `len` bytes atomically; returns `1` on success |
 | `Uart_Write(handler, data, size)` | Sends `size` bytes via `HAL_UART_Transmit_IT`; returns `0` if previous TX is not complete |
+| `LoRa_UART_RxCpltCallback(huart)` | Internal RX handler — call from your `HAL_UART_RxCpltCallback` |
+| `LoRa_UART_TxCpltCallback(huart)` | Internal TX handler — call from your `HAL_UART_TxCpltCallback` |
 
-**`txCplt` flag:** set to `0` before transmit, restored to `1` inside `HAL_UART_TxCpltCallback`. Always check the return value of `Uart_Write` to detect a busy condition.
+**`txCplt` flag:** set to `0` before transmit, restored to `1` inside `LoRa_UART_TxCpltCallback`. Always check the return value of `Uart_Write` to detect a busy condition.
 
 > **Important:** `MAX_UART_COUNT` (default `3`) limits the number of simultaneously registered handlers. Increase this define if you need more.
 
@@ -493,16 +499,36 @@ Call `Lora_Process` for every registered module in the main loop.
 
 ## Interrupt Handlers
 
-The following HAL callbacks must be reachable — they are defined in `uart.c` and `LoRa_E22.c`.
+The library exposes its own named callback functions instead of defining `HAL_UART_RxCpltCallback` / `HAL_UART_TxCpltCallback` directly. This avoids linker conflicts when integrating with other libraries or application code that also needs these callbacks.
 
-### `HAL_UART_RxCpltCallback`
-Defined in `uart.c`. Enqueues the received byte into the matching handler's ring buffer and re-arms `Receive_IT`. Do **not** define this callback elsewhere.
+### UART Callbacks
 
-### `HAL_UART_TxCpltCallback`
-Defined in `uart.c`. Restores the `txCplt` flag so the next `Uart_Write` can proceed.
+`uart.c` defines two functions that must be called from your project's HAL callbacks:
 
-### `Lora_AUX_IRQHandler`
-Call this from your GPIO EXTI handler, passing the triggering pin number:
+```c
+void LoRa_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+void LoRa_UART_TxCpltCallback(UART_HandleTypeDef *huart);
+```
+
+Wire them up in your project (typically in `main.c` or `stm32f4xx_it.c`):
+
+```c
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    LoRa_UART_RxCpltCallback(huart);
+    // add any other project-specific RX handling here
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    LoRa_UART_TxCpltCallback(huart);
+    // add any other project-specific TX handling here
+}
+```
+
+### AUX Pin (GPIO EXTI)
+
+Call `Lora_AUX_IRQHandler` from your GPIO EXTI handler, passing the triggering pin number:
 
 ```c
 // In stm32f4xx_it.c
