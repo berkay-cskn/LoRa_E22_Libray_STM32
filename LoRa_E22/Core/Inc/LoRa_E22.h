@@ -183,9 +183,9 @@ typedef struct {
     uint32_t cmdStartTick;
 
     // Status flags
-    uint8_t dataReady;
-    uint8_t cmdResponseReady;
-    uint8_t moduleReady;
+    volatile uint8_t dataReady;
+    volatile uint8_t cmdResponseReady;
+    volatile uint8_t moduleReady;
 
     // RSSI
     uint8_t RSSI;

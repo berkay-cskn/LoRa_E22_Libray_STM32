@@ -61,6 +61,7 @@ void Error_Handler(void);
 #define E22_M1_GPIO_Port GPIOC
 #define E22_AUX_Pin GPIO_PIN_4
 #define E22_AUX_GPIO_Port GPIOA
+#define E22_AUX_EXTI_IRQn EXTI4_IRQn
 #define E22_M0_Pin GPIO_PIN_0
 #define E22_M0_GPIO_Port GPIOB
 #define E22_2_M1_Pin GPIO_PIN_10
@@ -69,6 +70,7 @@ void Error_Handler(void);
 #define E22_2_M0_GPIO_Port GPIOB
 #define E22_2_AUX_Pin GPIO_PIN_5
 #define E22_2_AUX_GPIO_Port GPIOB
+#define E22_2_AUX_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
 

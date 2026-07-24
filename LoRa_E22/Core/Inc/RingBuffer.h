@@ -13,10 +13,10 @@
 
 typedef struct {
 	uint8_t * const buffer;
-	uint16_t head;
-	uint16_t tail;
+	volatile uint16_t head;
+	volatile uint16_t tail;
 	uint16_t size;
-	uint16_t bytesToRead;
+	volatile uint16_t bytesToRead;
 } RingBuffer_t;
 
 void RingBuffer_Init(RingBuffer_t *ringBuffer, uint16_t size);

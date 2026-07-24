@@ -44,22 +44,33 @@ typedef struct __attribute__((__packed__)) {
 	Position gps;
 	Vector3 accelerometer;
 	Vector3 gyroscope;
-	Vector3 magnetometer;
-	float angle;
+	Vector3 angle;
+	float noseAngle;
 	uint8_t status;
 } RocketDataPack;
 
-typedef struct __attribute__((__packed__)){
-	Position gps;
-	float strainX;
-	float strainY;
+typedef struct __attribute__((__packed__))
+{
+    float altitude;
+
+    Position gps;
+
+    Vector3 accelerometer;
+    Vector3 gyroscope;
+    Vector3 angle;
+
+    float strain1;
+    float strain2;
+    float strain3;
+    float strain4;
+    float strain5;
+
 } PayloadDataPack;
 
 typedef struct __attribute__((__packed__)) {
 	uint8_t prefix;
 	RocketDataPack rocketData;
 	PayloadDataPack payloadData;
-	Position comGPS;
 	uint8_t ukb_rssi;
 	uint8_t gy_rssi;
 	uint8_t suffix;
@@ -69,6 +80,8 @@ Lora_t lora;
 Lora_t lora2;
 
 DataPack dataPack;
+PayloadDataPack payloadData;
+RocketDataPack rocketData;
 
 Lora_Config_t loraConfig;
 
@@ -83,6 +96,9 @@ UartHandler_t uart2;
 
 #define PREFIX 0xAB
 #define SUFFIX 0xDC
+
+
+#define LORA_CHANNEL 57
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -97,8 +113,6 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 
-uint8_t response[10];
-uint8_t data[10];
 
 /* USER CODE END PV */
 
@@ -109,6 +123,8 @@ static void MX_UART4_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
+
+
 
 /* USER CODE END PFP */
 
@@ -151,18 +167,8 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  data[0] = 1;
-  data[1] = 2;
-  data[2] = 3;
-  data[3] = 4;
-  data[4] = 5;
-  data[5] = 6;
-  data[6] = 7;
-  data[7] = 8;
-  data[8] = 9;
-  data[9] = 10;
+  memset(&rocketData, 0, sizeof(rocketData));
 
-  memset(&dataPack, 0, sizeof(dataPack));
   dataPack.prefix = PREFIX;
   dataPack.suffix = SUFFIX;
 
@@ -204,6 +210,32 @@ int main(void)
 
   Lora_Init(&lora2, &loraInit2, &uart1);
 
+  Lora_SetMode(&lora, LORA_MODE_CONFIGURATION);
+  HAL_Delay(100);
+  //memcpy(&loraConfig, &lora2.config, 7);
+  loraConfig = lora.config;
+  loraConfig.ADDH = 0;
+  loraConfig.ADDL = 100;
+  loraConfig.AirDataRate = LORA_AIR_DATA_RATE_4_8;
+  loraConfig.AmbientRSSI = 0;
+  loraConfig.BaudRate = LORA_UART_BAUD_RATE_9600;
+  loraConfig.Channel = LORA_CHANNEL;
+  loraConfig.FixedPointTransmission = 1;
+  loraConfig.LBTEnabled = 0;
+  loraConfig.ParityBit = 0;
+  loraConfig.NETID = 0;
+  loraConfig.RSSIEnabled = 1;
+  loraConfig.RepeaterEnabled = 0;
+  loraConfig.SubPacketSize = LORA_SUB_PACKET_SIZE_64;
+  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_27;
+  loraConfig.WORCycle = 0;
+  loraConfig.WORTransceiverControl = 0;
+  Lora_SetConfig(&lora, &loraConfig);
+  HAL_Delay(100);
+  Lora_GetConfig(&lora);
+  HAL_Delay(100);
+  Lora_SetMode(&lora, LORA_MODE_NORMAL);
+
   Lora_SetMode(&lora2, LORA_MODE_CONFIGURATION);
   HAL_Delay(100);
   //memcpy(&loraConfig, &lora2.config, 7);
@@ -213,7 +245,7 @@ int main(void)
   loraConfig.AirDataRate = LORA_AIR_DATA_RATE_4_8;
   loraConfig.AmbientRSSI = 0;
   loraConfig.BaudRate = LORA_UART_BAUD_RATE_9600;
-  loraConfig.Channel = 18;
+  loraConfig.Channel = LORA_CHANNEL;
   loraConfig.FixedPointTransmission = 1;
   loraConfig.LBTEnabled = 0;
   loraConfig.ParityBit = 0;
@@ -221,7 +253,7 @@ int main(void)
   loraConfig.RSSIEnabled = 1;
   loraConfig.RepeaterEnabled = 0;
   loraConfig.SubPacketSize = LORA_SUB_PACKET_SIZE_64;
-  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_30;
+  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_27;
   loraConfig.WORCycle = 0;
   loraConfig.WORTransceiverControl = 0;
   Lora_SetConfig(&lora2, &loraConfig);
@@ -229,27 +261,6 @@ int main(void)
   Lora_GetConfig(&lora2);
   HAL_Delay(100);
   Lora_SetMode(&lora2, LORA_MODE_NORMAL);
-
-/*
-  Lora_SetMode(&lora, LORA_MODE_CONFIGURATION);
-  HAL_Delay(100);
-  loraConfig.ADDH = 0;
-  loraConfig.ADDL = 101;
-  loraConfig.AirDataRate = LORA_AIR_DATA_RATE_4_8;
-  loraConfig.AmbientRSSI = 0;
-  loraConfig.BaudRate = LORA_UART_BAUD_RATE_9600;
-  loraConfig.Channel = 18;
-  loraConfig.FixedPointTransmission = 1;
-  loraConfig.LBTEnabled = 0;
-  loraConfig.ParityBit = 0;
-  loraConfig.NETID = 0;
-  loraConfig.RSSIEnabled = 1;
-  loraConfig.RepeaterEnabled = 0;
-  loraConfig.SubPacketSize = LORA_SUB_PACKET_SIZE_64;
-  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_30;
-  loraConfig.WORCycle = 0;
-  loraConfig.WORTransceiverControl = 0;
-*/
 
   RingBuffer_t rb3;
   uart2.ringBuffer = &rb3;
@@ -269,18 +280,27 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	  Lora_Process(&lora);
 	  Lora_Process(&lora2);
+
+	  if(Lora_IsDataReady(&lora)) {
+		  Lora_Read(&lora, (uint8_t *)&payloadData, sizeof(payloadData));
+		  dataReady = 1;
+	  }
+
 	  if(Lora_IsDataReady(&lora2)) {
-		  Lora_Read(&lora2, (uint8_t *)&dataPack.rocketData, sizeof(dataPack.rocketData));
+		  Lora_Read(&lora2, (uint8_t *)&rocketData, sizeof(rocketData));
 		  dataReady = 1;
 	  }
 
 	  if(HAL_GetTick() - startTime > 200) {
 		  startTime = HAL_GetTick();
-		  Lora_Write(&lora, 101, 18, data, 10);
 		  dataPack.ukb_rssi = lora2.RSSI;
 		  if(dataReady) {
+			  memcpy(&dataPack.rocketData, (uint8_t *)&rocketData, sizeof(rocketData));
+			  memcpy(&dataPack.payloadData, (uint8_t *)&payloadData, sizeof(payloadData));
 			  dataPack.ukb_rssi = lora2.RSSI;
+			  dataPack.gy_rssi = lora.RSSI;
 			  Uart_Write(&uart2, (uint8_t *)&dataPack, sizeof(dataPack));
 			  dataReady = 0;
 		  }
@@ -484,6 +504,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(E22_2_AUX_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

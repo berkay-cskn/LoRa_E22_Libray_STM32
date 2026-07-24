@@ -18,8 +18,8 @@
 typedef struct {
 	UART_HandleTypeDef* uart;
 	RingBuffer_t* ringBuffer;
-	uint8_t rxByte;
-	uint8_t txCplt;
+	volatile uint8_t rxByte;
+	volatile uint8_t txCplt;
 } UartHandler_t;
 
 void Uart_Init(UartHandler_t* uartHandler);
