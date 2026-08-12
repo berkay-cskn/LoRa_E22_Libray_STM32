@@ -36,6 +36,7 @@ uint8_t Uart_ReadByte(UartHandler_t* uartHandler, uint8_t* data)
 
     RingBuffer_Dequeue(uartHandler->ringBuffer, data, 1);
     return 1;
+
 }
 
 uint8_t Uart_ReadPacket(UartHandler_t* uartHandler, uint8_t* buffer, uint16_t length)

@@ -168,7 +168,7 @@ static void Lora_ProcessNormalData(Lora_t *lora, uint8_t byte)
         case LORA_PARSE_STATE_WAITING_SUFFIX:
             if(byte == lora->init->suffix)
             {
-                if(lora->config.RSSIEnabled) {
+                if(1) {
                     lora->parseState = LORA_PARSE_STATE_WAITING_RSSI;
                 }
                 else {

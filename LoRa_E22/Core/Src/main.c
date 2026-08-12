@@ -30,7 +30,7 @@
 typedef struct {
 	float latitude;
 	float longitude;
-	float altitude;
+	float altitude; // BUNA GEREK YOK
 } Position;
 
 typedef struct {
@@ -42,6 +42,9 @@ typedef struct {
 typedef struct __attribute__((__packed__)) {
 	float altitude;
 	Position gps;
+    uint8_t satelliteCount;
+    float pdop;
+
 	Vector3 accelerometer;
 	Vector3 gyroscope;
 	Vector3 angle;
@@ -54,6 +57,8 @@ typedef struct __attribute__((__packed__))
     float altitude;
 
     Position gps;
+    uint8_t satelliteCount;
+    float pdop;
 
     Vector3 accelerometer;
     Vector3 gyroscope;
@@ -212,10 +217,9 @@ int main(void)
 
   Lora_SetMode(&lora, LORA_MODE_CONFIGURATION);
   HAL_Delay(100);
-  //memcpy(&loraConfig, &lora2.config, 7);
   loraConfig = lora.config;
   loraConfig.ADDH = 0;
-  loraConfig.ADDL = 100;
+  loraConfig.ADDL = 99;
   loraConfig.AirDataRate = LORA_AIR_DATA_RATE_4_8;
   loraConfig.AmbientRSSI = 0;
   loraConfig.BaudRate = LORA_UART_BAUD_RATE_9600;
@@ -226,8 +230,8 @@ int main(void)
   loraConfig.NETID = 0;
   loraConfig.RSSIEnabled = 1;
   loraConfig.RepeaterEnabled = 0;
-  loraConfig.SubPacketSize = LORA_SUB_PACKET_SIZE_64;
-  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_27;
+  loraConfig.SubPacketSize = LORA_SUB_PACKET_SIZE_128;
+  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_30;
   loraConfig.WORCycle = 0;
   loraConfig.WORTransceiverControl = 0;
   Lora_SetConfig(&lora, &loraConfig);
@@ -253,7 +257,7 @@ int main(void)
   loraConfig.RSSIEnabled = 1;
   loraConfig.RepeaterEnabled = 0;
   loraConfig.SubPacketSize = LORA_SUB_PACKET_SIZE_64;
-  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_27;
+  loraConfig.TransmittingPower = LORA_TRANSMITTING_POWER_30;
   loraConfig.WORCycle = 0;
   loraConfig.WORTransceiverControl = 0;
   Lora_SetConfig(&lora2, &loraConfig);

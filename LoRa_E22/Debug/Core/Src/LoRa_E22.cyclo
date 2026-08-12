@@ -2,7 +2,7 @@
 ../Core/Src/LoRa_E22.c:54:15:Lora_SetMode	7
 ../Core/Src/LoRa_E22.c:100:6:Lora_SetParseMode	2
 ../Core/Src/LoRa_E22.c:118:6:Lora_Process	4
-../Core/Src/LoRa_E22.c:135:13:Lora_ProcessNormalData	12
+../Core/Src/LoRa_E22.c:135:13:Lora_ProcessNormalData	11
 ../Core/Src/LoRa_E22.c:202:13:Lora_ProcessCommandByte	3
 ../Core/Src/LoRa_E22.c:216:15:Lora_Write	10
 ../Core/Src/LoRa_E22.c:265:9:Lora_Read	6
